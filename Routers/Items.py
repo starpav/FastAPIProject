@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, Path, Body
 from Schemas.Items import Item, ItemUpdate
+from Dependencies.Pagination import PaginationDep
 
 items = [
     {"id": 1, "name": "Item 1", "price": 100.00},
@@ -21,10 +22,9 @@ router = APIRouter(
 
 @router.get("", summary="Получить список товаров", description="Получить список всех товаров или результат поиска по цене/названию")
 def get_items(
+        pagination: PaginationDep,
         name: str | None = Query(default=None, description="Название товара"),
         price: float | None = Query(default=None, description="Цена товара"),
-        page: int = Query(default=1, ge=1, description="Номер страницы"),
-        per_page: int = Query(default=3, ge=1, le=10, description="Количество товаров на странице")
 ):
     # Фильтрация
     filtered_items = items
@@ -35,8 +35,8 @@ def get_items(
 
 
     total = len(filtered_items)
-    start = (page - 1) * per_page
-    end = start + per_page
+    start = (pagination.page - 1) * pagination.per_page
+    end = start + pagination.per_page
     if start >= total:
         return {"error": "Page not found"}
     items_page = items[start:end]
