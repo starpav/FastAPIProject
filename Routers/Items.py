@@ -20,8 +20,14 @@ router = APIRouter(
 )
 
 @router.get("", summary="Получить список товаров", description="Получить список всех товаров")
-def get_items():
-    return items
+def get_items(
+        page: int = Query(default=1, description="Номер страницы"),
+        per_page: int = Query(default=3, description="Количество товаров на странице")
+):
+    start = (page - 1) * per_page
+    end = start + per_page
+    items_page = items[start:end]
+    return items_page
 
 @router.get("/search",  summary="Поиск товаров", description="Поиск товаров по названию")
 def search_items(
@@ -59,7 +65,7 @@ def create_item(
             },
         })
 ):
-    new_item = {"id": len(items) + 1, "name": item_data.name,  "price": item_data.price}
+    new_item = {"id": items[-1]["id"] + 1, "name": item_data.name,  "price": item_data.price}
     items.append(new_item)
     return {"message": "Item created", "item": new_item}
 
