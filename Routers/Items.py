@@ -19,23 +19,28 @@ router = APIRouter(
     tags=["Товары"]
 )
 
-@router.get("", summary="Получить список товаров", description="Получить список всех товаров")
+@router.get("", summary="Получить список товаров", description="Получить список всех товаров или результат поиска по цене/названию")
 def get_items(
-        page: int = Query(default=1, description="Номер страницы"),
-        per_page: int = Query(default=3, description="Количество товаров на странице")
+        name: str | None = Query(default=None, description="Название товара"),
+        price: float | None = Query(default=None, description="Цена товара"),
+        page: int = Query(default=1, ge=1, description="Номер страницы"),
+        per_page: int = Query(default=3, ge=1, le=10, description="Количество товаров на странице")
 ):
+    # Фильтрация
+    filtered_items = items
+    if name:
+        filtered_items = [item for item in filtered_items if name.lower() in item["name"].lower()]
+    if price:
+        filtered_items = [item for item in filtered_items if item["price"] == price]
+
+
+    total = len(filtered_items)
     start = (page - 1) * per_page
     end = start + per_page
+    if start >= total:
+        return {"error": "Page not found"}
     items_page = items[start:end]
     return items_page
-
-@router.get("/search",  summary="Поиск товаров", description="Поиск товаров по названию")
-def search_items(
-        name: str | None = Query(default=None, description="Название товара")
-):
-    if not name:
-        return items
-    return [item for item in items if name.lower() in item["name"].lower()]
 
 @router.get("/{item_id}",  summary="Получить товар по ID", description="Получить товар по его ID")
 def get_item(
