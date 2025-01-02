@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Path, Body
-from Schemas.Items import Item, ItemUpdate
-from Dependencies.Pagination import PaginationDep
+from src.schemas.items import Item, ItemUpdate
+from src.dependencies.pagination import PaginationDep
 
 items = [
     {"id": 1, "name": "Item 1", "price": 100.00},
