@@ -23,45 +23,19 @@ class BaseRepository:
         result = await self.session.execute(stmt)
         return result.scalars().one()
     
-    async def update(self, id: int, data: BaseModel):
-        # Преобразуем данные из Pydantic-схемы, исключая unset (непереданные значения)
-        data_dict = data.model_dump(exclude_unset=True)
-
-        # Проверяем, что есть данные для обновления
-        if not data_dict:
-            return {"error": "No data provided for update"}
-
-        # Поиск сущности по id
-        query = select(self.model).where(self.model.id == id)
-        result = await self.session.execute(query)
-        entity = result.scalar_one_or_none()
-
-        if not entity:
-            return {"error": "Item not found"}
-
-        # Выполняем обновление
+    async def update(self, data: BaseModel, exclude_unset: bool = False, **filter_by):
         update_stmt = (
             update(self.model)
-            .where(self.model.id == id)
-            .values(**data_dict)
-            .returning(self.model)
+            .filter_by(**filter_by)
+            .values(**data.model_dump(exclude_unset = exclude_unset))
         )
-        update_result = await self.session.execute(update_stmt)
+        await self.session.execute(update_stmt)
 
-        # Возвращаем обновленную запись
-        return update_result.scalars().one_or_none()
     
-    async def delete(self, id: int):
-        query = select(self.model).where(self.model.id == id)
-        result = await self.session.execute(query)
-        entity = result.scalar_one_or_none()
-
-        if not entity:
-            return {"error": "Item not found"}
-
+    async def delete(self, **filter_by):
         delete_stmt = (
             delete(self.model)
-            .where(self.model.id == id)
+            .filter_by(**filter_by)
         )
         await self.session.execute(delete_stmt)
 

@@ -32,10 +32,14 @@ async def get_categories(
             return {"error": f"Categories not found: {str(e)}"}
 
 @router.get("/{category_id}",  summary="Получить категорию по ID", description="Получить категорию по ее ID")
-def get_category(
+async def get_category(
         category_id: int = Path(description="ID категории")
     ):
-    return {"error": "Category not found"}
+    async with async_session_maker() as session:
+        try:
+            return await CategoryRepository(session).get_one_or_none(id = category_id)
+        except Exception as e:
+            return {"error": f"Categories not found: {str(e)}"}
 
 @router.post("", summary="Добавить категорию")
 async def create_category(
@@ -70,12 +74,12 @@ async def delete_category(
 ):
     async with async_session_maker() as session:
         try:
-            await CategoryRepository(session).delete(category_id)
+            await CategoryRepository(session).delete(id = category_id)
             await session.commit()
-            return {"message": "Category deleted."}
+            return {"message": "Category was deleted."}
         except:
             await session.rollback()
-            return {"message": "Category not deleted"}
+            return {"message": "Category was not deleted"}
 
 @router.put("/{category_id}",  summary="Обновить категорию", description="Обновить полностью информацию о существующей категории по ее ID")
 async def update_category_put(
@@ -84,9 +88,9 @@ async def update_category_put(
 ):
     async with async_session_maker() as session:
         try:
-            result = await CategoryRepository(session).update(category_id, updated_category)
+            await CategoryRepository(session).update(updated_category, id = category_id)
             await session.commit()
-            return {"message": "Category updated.", "date": result}
+            return {"message": "Category was updated."}
         except:
             await session.rollback()
-            return {"message": "Category not updated"}
+            return {"message": "Category was not updated"}
