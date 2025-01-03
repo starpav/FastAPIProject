@@ -9,7 +9,7 @@ from src.config import settings
 from src.database import Base
 from src.models.items import Item
 from src.models.categories import Category
-from src.models.subcategories import Subcategory
+# from src.models.subcategories import Subcategory
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

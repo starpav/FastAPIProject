@@ -1,112 +1,79 @@
 from fastapi import APIRouter, Query, Path, Body
-from src.schemas.items import Item, ItemUpdate
+from sqlalchemy import insert, select
+from src.schemas.categories import SCategory, SCategoryCreate
 from src.dependencies.pagination import PaginationDep
 
-items = [
-    {"id": 1, "name": "Item 1", "price": 100.00},
-    {"id": 2, "name": "Item 2", "price": 100.00},
-    {"id": 3, "name": "Item 3", "price": 100.00},
-    {"id": 4, "name": "Item 4", "price": 100.00},
-    {"id": 5, "name": "Item 5", "price": 100.00},
-    {"id": 6, "name": "Item 6", "price": 100.00},
-    {"id": 7, "name": "Item 7", "price": 100.00},
-    {"id": 8, "name": "Item 8", "price": 100.00},
-    {"id": 9, "name": "Item 9", "price": 100.00},
-    {"id": 10, "name": "Item 10", "price": 100.00}
-]
+from src.database import async_session_maker
+from src.models.categories import Category
+from repositories.categories import CategoryRepository
+
 
 router = APIRouter(
-    prefix="/items",
-    tags=["Товары"]
+    prefix="/categories",
+    tags=["Категории"]
 )
 
-@router.get("", summary="Получить список товаров", description="Получить список всех товаров или результат поиска по цене/названию")
-def get_items(
+@router.get("", summary="Получить список категорий", description="Получить список всех категорий или результат поиска по названию")
+async def get_categories(
         pagination: PaginationDep,
-        name: str | None = Query(default=None, description="Название товара"),
-        price: float | None = Query(default=None, description="Цена товара"),
+        name: str | None = Query(default=None, description="Название категории"),
 ):
-    # Фильтрация
-    filtered_items = items
-    if name:
-        filtered_items = [item for item in filtered_items if name.lower() in item["name"].lower()]
-    if price:
-        filtered_items = [item for item in filtered_items if item["price"] == price]
+    offset = (pagination.page - 1) * pagination.per_page
+    async with async_session_maker() as session:
+        try:
+            query = select(Category)
+            if name:
+                query = query.filter(Category.name.icontains(name))
+            query = query.offset(offset).limit(pagination.per_page)
+            result = await session.execute(query)
+            categories = result.scalars().all()
+            return categories
+        except Exception as e:
+            return {"error": f"Categories not found: {str(e)}"}
 
-
-    total = len(filtered_items)
-    start = (pagination.page - 1) * pagination.per_page
-    end = start + pagination.per_page
-    if start >= total:
-        return {"error": "Page not found"}
-    items_page = items[start:end]
-    return items_page
-
-@router.get("/{item_id}",  summary="Получить товар по ID", description="Получить товар по его ID")
-def get_item(
-        item_id: int = Path(description="ID товара")
+@router.get("/{category_id}",  summary="Получить категорию по ID", description="Получить категорию по ее ID")
+def get_category(
+        category_id: int = Path(description="ID категории")
     ):
-    for item in items:
-        if item["id"] == item_id:
-            return item
-    return {"error": "Item not found"}
+    return {"error": "Category not found"}
 
-@router.post("", summary="Добавить товар")
-def create_item(
-        item_data: Item = Body(openapi_examples={
+@router.post("", summary="Добавить категорию")
+async def create_category(
+        category_data: SCategoryCreate = Body(openapi_examples={
             "1": {
                 "summary": "Пример 1",
                 "value": {
-                    "name": "Item 11",
-                    "price": 100.00,
+                    "name": "Автомобили",
                 }
             },
             "2": {
                 "summary": "Пример 2",
                 "value": {
-                    "name": "Item 12",
-                    "price": 100.00,
+                    "name": "Бытовая техника",
                 }
             },
         })
 ):
-    new_item = {"id": items[-1]["id"] + 1, "name": item_data.name,  "price": item_data.price}
-    items.append(new_item)
-    return {"message": "Item created", "item": new_item}
+    async with async_session_maker() as session:
+            try:
+                result = await CategoryRepository(session).add(name=category_data.name)
+                await session.commit()
+                schema = SCategory.model_validate(result)
+                return {"message": f"Category created: {schema.model_dump()}"}
+            except:
+                await session.rollback()
+                return {"message": "Category not created"}
+    
 
-@router.delete("/{item_id}",  summary="Удалить товар", description="Удалить товар по его ID")
-def delete_item(
-        item_id: int = Path(description="ID товара")
+@router.delete("/{category_id}",  summary="Удалить категорию", description="Удалить категорию по ее ID")
+def delete_category(
+        category_id: int = Path(description="ID категории")
 ):
-    for item in items:
-        if item["id"] == item_id:
-            items.remove(item)
-            return {"message": "Item deleted"}
-    return {"error": "Item not found"}
+    return {"error": "Category not found"}
 
-@router.put("/{item_id}",  summary="Обновить товар", description="Обновить полностью информацию о существующем товаре по его ID")
-def update_item_put(
-        item_id: int = Path(description="ID товара"),
-            updated_item: Item = Body(description="Обновленный товар")
+@router.put("/{item_id}",  summary="Обновить категорию", description="Обновить полностью информацию о существующей категории по ее ID")
+def update_category_put(
+        category_id: int = Path(description="ID категории"),
+        updated_category: SCategoryCreate = Body(description="Обновленная категория")
 ):
-    for i, item in enumerate(items):
-        if item["id"] == item_id:
-            # Полностью обновляем элемент
-            items[i] = {"id": item_id, "name": updated_item.name, "price": updated_item.price}
-            return {"message": "Item updated"}
-    return {"error": "Item not found"}
-
-@router.patch("/{item_id}",  summary="Обновить товар", description="Обновить часть информации о существующем товаре по его ID")
-def update_item_patch(
-        item_id: int = Path(description="ID товара"),
-        updated_item: ItemUpdate = Body(description="Обновленный товар")
-):
-    for i, item in enumerate(items):
-        if item["id"] == item_id:
-            # Обновляем только указанные поля
-            if updated_item.name:
-                items[i]["name"] = updated_item.name
-            if updated_item.price:
-                items[i]["price"] = updated_item.price
-            return {"message": "Item updated"}
-    return {"error": "Item not found"}
+    return {"error": "Category not found"}

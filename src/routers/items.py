@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, Path, Body
-from src.schemas.items import Item, ItemUpdate
+from src.schemas.items import SItem, SItemUpdate
 from src.dependencies.pagination import PaginationDep
 
 items = [
@@ -53,7 +53,7 @@ def get_item(
 
 @router.post("", summary="Добавить товар")
 def create_item(
-        item_data: Item = Body(openapi_examples={
+        item_data: SItem = Body(openapi_examples={
             "1": {
                 "summary": "Пример 1",
                 "value": {
@@ -87,7 +87,7 @@ def delete_item(
 @router.put("/{item_id}",  summary="Обновить товар", description="Обновить полностью информацию о существующем товаре по его ID")
 def update_item_put(
         item_id: int = Path(description="ID товара"),
-            updated_item: Item = Body(description="Обновленный товар")
+            updated_item: SItem = Body(description="Обновленный товар")
 ):
     for i, item in enumerate(items):
         if item["id"] == item_id:
@@ -99,7 +99,7 @@ def update_item_put(
 @router.patch("/{item_id}",  summary="Обновить товар", description="Обновить часть информации о существующем товаре по его ID")
 def update_item_patch(
         item_id: int = Path(description="ID товара"),
-        updated_item: ItemUpdate = Body(description="Обновленный товар")
+        updated_item: SItemUpdate = Body(description="Обновленный товар")
 ):
     for i, item in enumerate(items):
         if item["id"] == item_id:

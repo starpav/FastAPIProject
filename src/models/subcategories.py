@@ -8,4 +8,4 @@ class Subcategory(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True,  autoincrement=True)
     name:  Mapped[str] = mapped_column(String(100), nullable=False,  unique=True)
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", name="fk_subcategories_category_id", ondelete="CASCADE"), nullable=False)

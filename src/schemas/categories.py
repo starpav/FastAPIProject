@@ -1,9 +1,12 @@
 from pydantic import BaseModel, Field
 
-class Item(BaseModel):
+class SCategory(BaseModel):
+    id: int
     name: str
-    price: float
+    
+    model_config = {
+        "from_attributes": True
+    }
 
-class ItemUpdate(BaseModel):
-    name: str | None = Field(None)
-    price: float | None = Field(None)
+class SCategoryCreate(BaseModel):
+    name: str
