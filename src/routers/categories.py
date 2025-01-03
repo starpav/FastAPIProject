@@ -55,25 +55,38 @@ async def create_category(
         })
 ):
     async with async_session_maker() as session:
-            try:
-                result = await CategoryRepository(session).add(name=category_data.name)
-                await session.commit()
-                schema = SCategory.model_validate(result)
-                return {"message": f"Category created: {schema.model_dump()}"}
-            except:
-                await session.rollback()
-                return {"message": "Category not created"}
+        try:
+            result = await CategoryRepository(session).add(category_data)
+            await session.commit()
+            return {"message": "Category created.", "date": result}
+        except:
+            await session.rollback()
+            return {"message": "Category not created"}
     
 
 @router.delete("/{category_id}",  summary="Удалить категорию", description="Удалить категорию по ее ID")
-def delete_category(
+async def delete_category(
         category_id: int = Path(description="ID категории")
 ):
-    return {"error": "Category not found"}
+    async with async_session_maker() as session:
+        try:
+            await CategoryRepository(session).delete(category_id)
+            await session.commit()
+            return {"message": "Category deleted."}
+        except:
+            await session.rollback()
+            return {"message": "Category not deleted"}
 
-@router.put("/{item_id}",  summary="Обновить категорию", description="Обновить полностью информацию о существующей категории по ее ID")
-def update_category_put(
+@router.put("/{category_id}",  summary="Обновить категорию", description="Обновить полностью информацию о существующей категории по ее ID")
+async def update_category_put(
         category_id: int = Path(description="ID категории"),
         updated_category: SCategoryCreate = Body(description="Обновленная категория")
 ):
-    return {"error": "Category not found"}
+    async with async_session_maker() as session:
+        try:
+            result = await CategoryRepository(session).update(category_id, updated_category)
+            await session.commit()
+            return {"message": "Category updated.", "date": result}
+        except:
+            await session.rollback()
+            return {"message": "Category not updated"}
