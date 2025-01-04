@@ -12,11 +12,11 @@ router = APIRouter(
     tags=["Категории"]
 )
 
-@router.get("", summary="Получить список категорий", description="Получить список всех категорий или результат поиска по названию")
+@router.get("", summary="Получить список категорий и подкатегорий", description="Получить список всех категорий или результат поиска по названию")
 async def get_categories(
     db: DBDep
 ):
-    return await db.categories.get_all()
+    return await db.categories.get_all_with_subcategories()
        
 
 @router.get("/{category_id}",  summary="Получить категорию по ID", description="Получить категорию по ее ID")

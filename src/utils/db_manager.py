@@ -5,9 +5,7 @@ from src.repositories.items import ItemRepository
 class DBManager:
     def __init__(self, session_factory):
         self.session_factory = session_factory
-        
-        self.categories: CategoryRepository | None = None
-        self.items: ItemRepository | None = None
+    
         
     async def __aenter__(self):
         self.session = self.session_factory()
