@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Query, Path, Body
-from sqlalchemy import insert, select
 from src.schemas.categories import SCategory, SCategoryCreate
 from src.dependencies.pagination import PaginationDep
 
 from src.database import async_session_maker
-from src.models.categories import Category
-from repositories.categories import CategoryRepository
+from src.repositories.categories import CategoryRepository
 
 
 router = APIRouter(
@@ -14,20 +12,10 @@ router = APIRouter(
 )
 
 @router.get("", summary="Получить список категорий", description="Получить список всех категорий или результат поиска по названию")
-async def get_categories(
-        pagination: PaginationDep,
-        name: str | None = Query(default=None, description="Название категории"),
-):
-    offset = (pagination.page - 1) * pagination.per_page
+async def get_categories():
     async with async_session_maker() as session:
         try:
-            query = select(Category)
-            if name:
-                query = query.filter(Category.name.icontains(name))
-            query = query.offset(offset).limit(pagination.per_page)
-            result = await session.execute(query)
-            categories = result.scalars().all()
-            return categories
+            return await CategoryRepository(session).get_all()
         except Exception as e:
             return {"error": f"Categories not found: {str(e)}"}
 
@@ -63,9 +51,9 @@ async def create_category(
             result = await CategoryRepository(session).add(category_data)
             await session.commit()
             return {"message": "Category created.", "date": result}
-        except:
+        except Exception as e:
             await session.rollback()
-            return {"message": "Category not created"}
+            return {"error": f"Category not created: {str(e)}"}
     
 
 @router.delete("/{category_id}",  summary="Удалить категорию", description="Удалить категорию по ее ID")

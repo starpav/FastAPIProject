@@ -1,12 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-class SCategory(BaseModel):
-    id: int
-    name: str
-    
-    model_config = {
-        "from_attributes": True
-    }
 
 class SCategoryCreate(BaseModel):
     name: str
+
+class SCategory(SCategoryCreate):
+    id: int
