@@ -1,11 +1,12 @@
 from sqlalchemy import select
+from src.repositories.mappers.items import ItemDataMapper
 from src.repositories.base import BaseRepository
 from src.models.items import Item
 from src.schemas.items import SItem
 
 class ItemRepository(BaseRepository):
     model = Item
-    schema = SItem
+    mapper = ItemDataMapper
     
     async def get_all(self, 
                       category_id,
@@ -26,5 +27,5 @@ class ItemRepository(BaseRepository):
             query = query.filter(Item.price==price)
         query = query.offset(offset).limit(limit)
         result = await self.session.execute(query)
-        return [self.schema.model_validate(entity, from_attributes=True) for entity in result.scalars().all()]
+        return [self.mapper.map_to_domain_entity(entity) for entity in result.scalars().all()]
         

@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from sqlalchemy import delete, insert, select, update
 
+from src.repositories.mappers.base import DataMapper
+
 
 class BaseRepository:
     model = None
-    schema: BaseModel = None
+    mapper: DataMapper = None
     
     def __init__(self, session):
         self.session = session
@@ -12,14 +14,14 @@ class BaseRepository:
     async def get_all(self, *args, **filter_by):
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
-        return [self.schema.model_validate(entity, from_attributes=True) for entity in result.scalars().all()]
+        return [self.mapper.map_to_domain_entity(entity) for entity in result.scalars().all()]
     
     async def get_one_or_none(self, **filter_by):
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
         entity = result.scalars().one_or_none()
         if entity:
-            return self.schema.model_validate(entity, from_attributes=True)
+            return self.mapper.map_to_domain_entity(entity)
         else:
             return None
     
