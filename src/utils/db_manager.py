@@ -25,4 +25,7 @@ class DBManager:
     async def flush(self):
         await self.session.flush()
         
+    async def rollback(self):
+        await self.session.rollback()
+        
     

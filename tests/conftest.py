@@ -18,6 +18,12 @@ from src.database import async_session_maker_null_pool
 def check_test_mode():
     assert settings.MODE == "TEST"
     
+    
+@pytest.fixture(scope="function")
+async def db() -> DBManager:
+    async with DBManager(session_factory=async_session_maker_null_pool) as db:
+        yield db
+    
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_data_base(check_test_mode):    
@@ -42,12 +48,12 @@ async def add_test_categories(setup_data_base):
         categories_data = json.load(f)
 
     # Создание сессии
-    async with DBManager(session_factory=async_session_maker_null_pool) as db:
+    async with DBManager(session_factory=async_session_maker_null_pool) as _db:
         # Добавление категорий
         for category in categories_data:
             category_data = SCategoryCreate(**category)
-            await db.categories.add(category_data)
-            await db.commit()  # Сохранение для генерации `id` в категориях
+            await _db.categories.add(category_data)
+            await _db.commit()  # Сохранение для генерации `id` в категориях
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -64,11 +70,11 @@ async def add_test_items(add_test_categories):
         items_data = json.load(f)
 
     # Создание сессии
-    async with DBManager(session_factory=async_session_maker_null_pool) as db:
+    async with DBManager(session_factory=async_session_maker_null_pool) as _db:
         # Добавление товаров
         for item in items_data:
             item_data = SItemCreate(**item)
-            await db.items.add(item_data)
-            await db.commit()  # Подтверждение транзакции
+            await _db.items.add(item_data)
+            await _db.commit()  # Подтверждение транзакции
 
  
